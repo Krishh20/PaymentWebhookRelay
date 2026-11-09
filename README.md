@@ -8,7 +8,10 @@
 ![Tests node:test](https://img.shields.io/badge/tests-node%3Atest-4B5563)
 
 ## Demo Video
-(https://github.com/Krishh20/PaymentWebhookRelay/raw/refs/heads/main/PaymentWebhookRelay%20%281%29.mp4)
+
+Watch the Mini Payment Webhook Relay Demo:
+
+https://github.com/user-attachments/assets/febc6927-6f3c-41cd-8639-02f28221b20d
 
 Mini Payment Webhook Relay is a learning-focused full-stack project that accepts
 signed payment webhook events, verifies their HMAC signatures, stores them
