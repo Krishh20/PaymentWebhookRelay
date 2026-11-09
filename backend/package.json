@@ -11,7 +11,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "test": "node --test"
+    "test": "node --test --test-concurrency=1 ../tests/unit.test.js ../tests/integration.test.js"
   },
   "dependencies": {
     "@prisma/client": "6.19.3",

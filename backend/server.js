@@ -64,6 +64,21 @@ async function shutdown(signal) {
 process.on("SIGINT", () => shutdown("SIGINT"));
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 
+// A broken promise must not leave the process silently half-alive. Log only
+// the message so unexpected values cannot leak sensitive payloads.
+process.on("unhandledRejection", (reason) => {
+  console.error(
+    "[backend] unhandled rejection:",
+    reason instanceof Error ? reason.message : reason,
+  );
+  shutdown("unhandledRejection");
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("[backend] uncaught exception:", error.message);
+  shutdown("uncaughtException");
+});
+
 start().catch(async (error) => {
   console.error("[backend] failed to start:", error.message);
   await prisma.$disconnect();

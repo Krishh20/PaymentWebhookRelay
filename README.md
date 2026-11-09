@@ -36,7 +36,7 @@ dashboard.
 │   └── server.js
 ├── database/            # Database documentation (Prisma owns schema)
 ├── frontend/            # Next.js read-only dashboard
-├── tests/               # Integration tests (Phase 11)
+├── tests/               # Integration/unit tests and test-database helper
 ├── docker-compose.yml   # Local PostgreSQL only
 └── .env.example
 ```
@@ -499,6 +499,79 @@ All attempt rows are kept for the delivery-monitoring and dead-letter views.
 
 There is no outbox table and no separate worker.
 
+## Testing
+
+```bash
+npm test
+```
+
+The suite uses Node's built-in test runner (`node --test`) and needs PostgreSQL
+running. It creates a separate `payment_relay_test` database on the same server,
+applies all Prisma migrations to it, and truncates its data between tests. The
+developer database (`payment_relay`) is never modified.
+
+`tests/` contains:
+
+- `tests/unit.test.js` — retry classification, Retry-After parsing, backoff
+  jitter bounds and HMAC verification.
+- `tests/integration.test.js` — HTTP API and processor tests against the real
+  Express app and test database.
+- `tests/helpers/testDatabase.js` — creates and migrates the test database.
+
+The integration suite covers:
+
+- Health and safe internal configuration (no secret exposure).
+- Valid ingestion, duplicate idempotency, invalid signatures, missing
+  signatures, unknown sources, invalid JSON, invalid payloads, wrong content
+  types and the 1 MB body limit.
+- Successful delivery, intermittent retry-then-succeed, retry exhaustion,
+  permanent 404 dead-lettering, timeouts, inactive destinations, job claiming,
+  expired/interrupted lock recovery and overlapping processor ticks.
+- Event list filters/pagination, event detail, delivery list/detail, dead-letter
+  listing, overview aggregates and query-parameter validation.
+- JSON 404 responses and normalized malformed-JSON errors.
+
+## Error handling
+
+- Request validation failures return `400` with a stable message; unknown
+  sources and resources return `404`; signature failures return `401`; bodies
+  over 1 MB return `413`; unsupported content types and encodings return `415`.
+- Malformed JSON is normalized to `Request body must be valid JSON.` instead of
+  leaking parser internals.
+- Unexpected server errors return a generic `500` message. Errors with a
+  status of 500 or higher are logged; rejected webhooks (invalid signatures and
+  validation errors) are not, to avoid noisy or hostile logs.
+- Each processor job is isolated: one failed job does not stop the rest of the
+  batch, and the lock expiry recovers jobs left in `processing`.
+- `SIGINT`, `SIGTERM`, unhandled promise rejections and uncaught exceptions
+  trigger a graceful shutdown of the processor, HTTP server and Prisma client.
+- Secrets, signatures and `secretEnvVar` are never returned by any endpoint or
+  written to logs.
+
+## Version control
+
+`.gitignore` excludes all real environment files (`backend/.env` and every
+`.env.*` variant) while keeping the documented `.env.example` template. It also
+excludes dependencies, build output (`.next/`, `out/`, `dist/`, `coverage/`),
+logs, local secrets such as `*.pem`/`*.key`, and editor/OS temporary files.
+
+Tracked intentionally: `package.json`, both lockfiles, `backend/prisma/schema.prisma`,
+the migration SQL, `migration_lock.toml`, tests and documentation.
+
+Check what Git would commit:
+
+```bash
+git status --short
+git check-ignore -v backend/.env
+git ls-files | grep -i env
+```
+
+`backend/.env` should be listed as ignored and only `.env.example` should appear
+among tracked environment files. If a real secret is ever committed, rotate the
+credential first, then remove it from history with `git filter-repo` or BFG and
+force-push the rewritten history. This repository's initial commit contains no
+real secrets.
+
 ## Build status
 
 - [x] **Phase 1:** Project setup, folder structure, dependencies, local
@@ -512,4 +585,4 @@ There is no outbox table and no separate worker.
 - [x] **Phase 8:** Retries, exponential backoff, attempt history
 - [x] **Phase 9:** Dead letter queue and failed-event APIs
 - [x] **Phase 10:** Next.js dashboard with four read-only sections
-- [ ] Phase 11: Integration testing, error handling, documentation
+- [x] **Phase 11:** Integration tests, hardened error handling, documentation

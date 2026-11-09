@@ -10,6 +10,17 @@ function errorHandler(error, req, res, next) {
     return sendError(res, 413, "Request body is too large.");
   }
 
+  if (error.type === "entity.parse.failed") {
+    return sendError(res, 400, "Request body must be valid JSON.");
+  }
+
+  if (
+    error.type === "encoding.unsupported" ||
+    error.type === "charset.unsupported"
+  ) {
+    return sendError(res, 415, "Request body encoding is not supported.");
+  }
+
   const statusCode = Number.isInteger(error.statusCode)
     ? error.statusCode
     : Number.isInteger(error.status)
