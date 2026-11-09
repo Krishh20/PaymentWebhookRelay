@@ -1,0 +1,21 @@
+{
+  "name": "payment-webhook-relay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mini payment webhook relay platform with retries and monitoring",
+  "scripts": {
+    "db:start": "docker compose up -d",
+    "db:stop": "docker compose down",
+    "db:reset": "docker compose down -v",
+    "db:logs": "docker compose logs -f db",
+    "setup:env": "node -e \"const fs=require('node:fs');if(!fs.existsSync('backend/.env')){fs.copyFileSync('.env.example','backend/.env');console.log('Created backend/.env from .env.example');}else{console.log('backend/.env already exists');}\"",
+    "prisma:generate": "npm --prefix backend run prisma:generate",
+    "prisma:migrate": "npm --prefix backend run prisma:migrate",
+    "backend:dev": "npm --prefix backend run dev",
+    "backend:start": "npm --prefix backend start",
+    "frontend:dev": "npm --prefix frontend run dev",
+    "frontend:build": "npm --prefix frontend run build",
+    "frontend:start": "npm --prefix frontend run start",
+    "test": "npm --prefix backend test"
+  }
+}

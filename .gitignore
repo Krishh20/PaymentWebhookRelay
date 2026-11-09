@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+
+# Environment files
+# Keep the documented template so new checkouts know what to configure.
+.env
+.env.*
+!.env.example
+
+# Local secrets and credentials
+*.pem
+*.key
+*.p12
+secrets/
+credentials/
+
+# Build output
+.next/
+out/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+.cache/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test and tooling temporary files
+.tmp/
+tmp/
+*.tmp
+
+# Editor / OS temporary files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Prisma generated client (if a custom output is configured later)
+backend/generated/

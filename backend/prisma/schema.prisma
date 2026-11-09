@@ -1,0 +1,167 @@
+// Prisma schema for the Mini Payment Webhook Relay.
+// Prisma Migrate owns the schema; no handwritten SQL is used.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum EventStatus {
+  received
+  queued
+  processing
+  delivered
+  dead_letter
+
+  @@map("event_status")
+}
+
+enum DeliveryStatus {
+  pending
+  processing
+  retrying
+  succeeded
+  dead_letter
+
+  @@map("delivery_status")
+}
+
+enum AttemptOutcome {
+  succeeded
+  retryable_failure
+  permanent_failure
+
+  @@map("attempt_outcome")
+}
+
+// ---------------------------------------------------------------------------
+// Sources
+// ---------------------------------------------------------------------------
+
+// A source is an internal configuration record for an incoming webhook
+// provider. The HMAC secret itself is never stored here: secretEnvVar names
+// the environment variable that holds it.
+model Source {
+  id              String   @id @default(uuid()) @db.Uuid
+  name            String   @unique
+  slug            String   @unique
+  signatureHeader String   @default("x-webhook-signature")
+  secretEnvVar    String   @default("WEBHOOK_SECRET")
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+
+  events Event[]
+
+  @@map("sources")
+}
+
+// ---------------------------------------------------------------------------
+// Events
+// ---------------------------------------------------------------------------
+
+model Event {
+  id                String      @id @default(uuid()) @db.Uuid
+  sourceId          String      @db.Uuid
+  source            Source      @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  externalEventId   String
+  eventType         String
+  payload           Json
+  signatureVerified Boolean     @default(false)
+  status            EventStatus @default(received)
+  receivedAt        DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime    @updatedAt @db.Timestamptz(3)
+
+  deliveryJob DeliveryJob?
+
+  // Idempotency: the same external event may not be received twice from the
+  // same source.
+  @@unique([sourceId, externalEventId])
+  @@index([receivedAt])
+  @@index([status])
+  @@index([eventType])
+  @@map("events")
+}
+
+// ---------------------------------------------------------------------------
+// Destination (exactly one row in practice; see key)
+// ---------------------------------------------------------------------------
+
+// This project supports a single delivery destination. The backend enforces
+// that there is only one active row; there is no destination management UI.
+model Destination {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  url       String
+  isActive  Boolean  @default(true)
+  timeoutMs Int      @default(10000)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  deliveryJobs DeliveryJob[]
+
+  @@map("destinations")
+}
+
+// ---------------------------------------------------------------------------
+// Delivery jobs
+// ---------------------------------------------------------------------------
+
+model DeliveryJob {
+  id                 String         @id @default(uuid()) @db.Uuid
+  eventId            String         @unique @db.Uuid
+  event              Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  destinationId      String         @db.Uuid
+  destination        Destination    @relation(fields: [destinationId], references: [id], onDelete: Restrict)
+  status             DeliveryStatus @default(pending)
+  attemptCount       Int            @default(0)
+  maxAttempts        Int            @default(5)
+  nextAttemptAt      DateTime       @default(now()) @db.Timestamptz(3)
+  lockedAt           DateTime?      @db.Timestamptz(3)
+  lockExpiresAt      DateTime?      @db.Timestamptz(3)
+  lastStatusCode     Int?
+  lastResponseTimeMs Int?
+  lastError          String?
+  createdAt          DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime       @updatedAt @db.Timestamptz(3)
+
+  attempts DeliveryAttempt[]
+
+  // The processor polls due work by status and nextAttemptAt.
+  @@index([status, nextAttemptAt])
+  // Stale processing jobs are recovered by status and lock expiry.
+  @@index([status, lockExpiresAt])
+  // Dead-letter and monitoring listings sort by status + update time.
+  @@index([status, updatedAt])
+  @@index([destinationId])
+  @@map("delivery_jobs")
+}
+
+// ---------------------------------------------------------------------------
+// Delivery attempts
+// ---------------------------------------------------------------------------
+
+model DeliveryAttempt {
+  id             String         @id @default(uuid()) @db.Uuid
+  deliveryJobId  String         @db.Uuid
+  deliveryJob    DeliveryJob    @relation(fields: [deliveryJobId], references: [id], onDelete: Cascade)
+  attemptNumber  Int
+  requestedAt    DateTime       @default(now()) @db.Timestamptz(3)
+  respondedAt    DateTime?      @db.Timestamptz(3)
+  httpStatusCode Int?
+  responseTimeMs Int?
+  errorMessage   String?
+  outcome        AttemptOutcome
+
+  // Attempt numbers are sequential per delivery job.
+  @@unique([deliveryJobId, attemptNumber])
+  @@map("delivery_attempts")
+}
