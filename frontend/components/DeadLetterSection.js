@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiGet, queryString } from "../lib/api";
+import { displayName } from "../lib/displayNames";
 import { formatDateTime, shortId } from "../lib/format";
 import {
   EmptyState,
@@ -88,23 +89,18 @@ export default function DeadLetterSection({ onOpenEvent }) {
     <section className="section">
       <SectionHeader
         eyebrow="Failed Events / Dead Letter Queue"
-        title="Deliveries that will not be retried"
-        description="Permanent failures and jobs that reached the maximum attempt count."
+        title="Failed deliveries requiring investigation"
+        description="View events that failed permanently or exhausted their maximum delivery attempts."
         onRefresh={refresh}
         refreshing={loading}
       />
-
-      <div className="notice">
-        This view is read-only. Manual replay and retry actions are intentionally
-        not supported.
-      </div>
 
       <form className="filters" onSubmit={applyFilters}>
         <label className="filter-field">
           <span>Search</span>
           <input
             type="search"
-            placeholder="External event ID"
+            placeholder="Search by external event ID"
             value={filters.search}
             onChange={(event) =>
               setFilters((current) => ({
@@ -183,7 +179,8 @@ export default function DeadLetterSection({ onOpenEvent }) {
                           {item.event.externalEventId}
                         </div>
                         <div className="cell-sub">
-                          {shortId(item.event.id)} · {item.destination.name}
+                          {shortId(item.event.id)} ·{" "}
+                          {displayName(item.destination.name)}
                         </div>
                       </td>
                       <td>

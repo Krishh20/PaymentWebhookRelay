@@ -39,12 +39,12 @@ export default function DashboardPage() {
           </div>
           <div>
             <p className="brand-title">Payment Webhook Relay</p>
-            <p className="brand-subtitle">Local delivery monitor</p>
+            <p className="brand-subtitle">Payment event delivery dashboard</p>
           </div>
         </div>
         <div className="environment-chip">
           <span className="pulse-dot" aria-hidden="true" />
-          Local environment
+          Local Development Environment
         </div>
       </header>
 

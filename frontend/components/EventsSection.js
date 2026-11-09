@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiGet, queryString } from "../lib/api";
+import { displayName } from "../lib/displayNames";
 import { formatDateTime, shortId } from "../lib/format";
 import {
   EmptyState,
@@ -92,7 +93,7 @@ export default function EventsSection({ onOpenEvent }) {
       <SectionHeader
         eyebrow="Events"
         title="Inbound webhook events"
-        description="Verified events, their delivery state and latest response."
+        description="View incoming payment events, verification status and delivery results."
         onRefresh={refresh}
         refreshing={loading}
       />
@@ -102,7 +103,7 @@ export default function EventsSection({ onOpenEvent }) {
           <span>Search</span>
           <input
             type="search"
-            placeholder="External event ID"
+            placeholder="Search by external event ID"
             value={filters.search}
             onChange={(event) =>
               setFilters((current) => ({
@@ -137,7 +138,7 @@ export default function EventsSection({ onOpenEvent }) {
           <span>Event type</span>
           <input
             type="text"
-            placeholder="payment.success"
+            placeholder="Filter by event type"
             value={filters.eventType}
             onChange={(event) =>
               setFilters((current) => ({
@@ -198,7 +199,8 @@ export default function EventsSection({ onOpenEvent }) {
                           {event.externalEventId}
                         </div>
                         <div className="cell-sub">
-                          {shortId(event.id)} · {event.source.name}
+                          {shortId(event.id)} ·{" "}
+                          {displayName(event.source.name)}
                         </div>
                       </td>
                       <td>

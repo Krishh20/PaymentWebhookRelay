@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiGet } from "../lib/api";
+import { displayName } from "../lib/displayNames";
 import { formatDateTime, shortId } from "../lib/format";
 import { ErrorBanner, LoadingBlock, StatusBadge } from "./ui";
 
@@ -184,7 +185,10 @@ export default function DetailDrawer({ target, onClose }) {
                             label: "Received",
                             value: formatDateTime(data.receivedAt),
                           },
-                          { label: "Source", value: data.source.name },
+                          {
+                            label: "Source",
+                            value: displayName(data.source.name),
+                          },
                           {
                             label: "Signature verified",
                             value: data.signatureVerified ? "Yes" : "No",
@@ -260,7 +264,7 @@ export default function DetailDrawer({ target, onClose }) {
                       },
                       {
                         label: "Destination",
-                        value: job.destination?.name,
+                        value: displayName(job.destination?.name),
                       },
                       {
                         label: "Destination URL",
@@ -308,7 +312,7 @@ export default function DetailDrawer({ target, onClose }) {
                       },
                       {
                         label: "Source",
-                        value: event.source?.name,
+                        value: displayName(event.source?.name),
                       },
                     ]}
                   />

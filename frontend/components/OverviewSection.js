@@ -116,7 +116,7 @@ export default function OverviewSection() {
       <SectionHeader
         eyebrow="Overview"
         title="Relay health at a glance"
-        description="Ingestion, delivery and retry volume for the local relay."
+        description="Monitor incoming events, delivery performance and retry activity."
         onRefresh={refresh}
         refreshing={loading}
       />
@@ -177,7 +177,9 @@ export default function OverviewSection() {
               <p className="stat-value">
                 {formatPercent(data.deliveryJobs.successRate)}
               </p>
-              <p className="stat-hint">Finished jobs only</p>
+              <p className="stat-hint">
+                Successful deliveries out of completed jobs.
+              </p>
             </article>
 
             <article className="stat-card accent-cyan">

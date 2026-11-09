@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiGet, queryString } from "../lib/api";
+import { displayName } from "../lib/displayNames";
 import { formatDateTime, shortId } from "../lib/format";
 import {
   EmptyState,
@@ -87,8 +88,8 @@ export default function DeliveriesSection({ onOpenDelivery }) {
     <section className="section">
       <SectionHeader
         eyebrow="Delivery Monitoring"
-        title="Outbound delivery jobs"
-        description="Claim state, retry schedule and the latest destination response."
+        title="Outgoing Webhook Deliveries"
+        description="Track outgoing webhook deliveries, retry schedules and receiver responses."
         onRefresh={refresh}
         refreshing={loading}
       />
@@ -98,7 +99,7 @@ export default function DeliveriesSection({ onOpenDelivery }) {
           <span>Search</span>
           <input
             type="search"
-            placeholder="External event ID"
+            placeholder="Search by external event ID"
             value={filters.search}
             onChange={(event) =>
               setFilters((current) => ({
@@ -133,7 +134,7 @@ export default function DeliveriesSection({ onOpenDelivery }) {
           <span>Event type</span>
           <input
             type="text"
-            placeholder="payment.success"
+            placeholder="Filter by event type"
             value={filters.eventType}
             onChange={(event) =>
               setFilters((current) => ({
@@ -197,7 +198,8 @@ export default function DeliveriesSection({ onOpenDelivery }) {
                           {job.event.externalEventId}
                         </div>
                         <div className="cell-sub">
-                          {shortId(job.event.id)} · {job.destination.name}
+                          {shortId(job.event.id)} ·{" "}
+                          {displayName(job.destination.name)}
                         </div>
                       </td>
                       <td>
